@@ -1,0 +1,259 @@
+#include <iostream>
+#include <stdio.h>
+#include <string>
+#include <WinSock2.h>
+#include <Windows.h>
+using namespace std;
+#pragma comment(lib, "Ws2_32.lib")
+#define DEFAULT_BUFLEN 512
+//************************************************Server
+class Server
+{
+public:
+	Server(int port)
+	{
+		CheckDll();
+		CreateSocket(port);
+	};
+	SOCKADDR_IN addr;
+	WSADATA wsaData;
+	SOCKET listenSocket;
+	SOCKET acceptSocket;
+	int socketResult;
+	int CheckDll();
+	int CreateSocket(int port);
+	struct in_addr getMyIP();
+	void NetWork();
+	char * MsgAnswer(string incoming);
+	char recvbuff[1024];
+	char mas[1024];
+	int ByteReceived, nlen, count;
+};
+
+char * Server::MsgAnswer(string _incoming)
+{	
+	char * message = "Illegal command!";
+	if(_incoming == "hello")
+		message = "Good Morning!";
+	if(_incoming == "\\abort")
+	{
+		printf("Terminated connection.");
+		closesocket(acceptSocket);
+		closesocket(listenSocket);
+		WSACleanup();
+	}
+	return message;
+};
+void Server::NetWork()
+{
+			int count = 0;
+			do
+			{
+				recv(acceptSocket, recvbuff, sizeof(recvbuff), 0);
+				mas[count] = recvbuff[0];
+				count++;
+			} while (recvbuff[0]!=13);
+			string q;
+			if ( count > 0 )
+			{
+				q.resize(count-1);
+				for(int i=0;i < count-1;i++)
+				{	
+					printf("%c", mas[i]);
+					q[i] = mas[i];
+				}
+				char *sendbuf = MsgAnswer(q);
+				socketResult = send( acceptSocket, sendbuf, (int)strlen(sendbuf), 0);
+			}
+			else 
+				if ( ByteReceived == 0 )
+					printf("Connection closed!\n");
+				else
+						printf("Recv failed with error: %d\n", WSAGetLastError());
+}
+int Server::CheckDll()
+{
+	   // int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+       if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) 
+		{
+			wprintf(L"WSAStartup failed with error: %ld\n", WSAGetLastError());
+			Sleep(3000);
+			exit(1);
+		}
+		return 0;
+};
+struct in_addr Server::getMyIP()
+{
+	char ac[80];
+	gethostname(ac, sizeof(ac));
+	struct hostent *phe = gethostbyname(ac);
+    struct in_addr addr;
+    memcpy(&addr, phe->h_addr_list[0], sizeof(struct in_addr));
+    cout << "Address : " << inet_ntoa(addr) << endl;
+	return addr;
+};
+int Server::CreateSocket(int port)
+{
+		CheckDll();
+		struct in_addr address = getMyIP();
+		listenSocket = INVALID_SOCKET;
+		memset(&addr, 0, sizeof(addr));
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(port); //htons(port);
+		addr.sin_addr.s_addr = address.S_un.S_addr; //inet_addr("127.0.0.1"); htonl(INADDR_ANY); htonl(address.S_un.S_addr); //address.S_un.S_addr
+
+		if((listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET ) //SOCK_STREAM (for UDP - SOCK_DGRAM)
+		{
+			
+			wprintf(L"Error! Socket Failed. Decription: %d\n", WSAGetLastError());
+			return 1;
+		}
+		if((socketResult = bind(listenSocket,(struct sockaddr*)&addr, sizeof(addr))) == SOCKET_ERROR) 
+		{
+		    wprintf(L"Error! Bind Failed. Decription: %d\n", WSAGetLastError());
+			if((socketResult = closesocket(listenSocket)) == SOCKET_ERROR)
+				wprintf(L"Error! Can not close socket. Decription: %d\n", WSAGetLastError());
+			return 1;
+		}
+		if (listen(listenSocket, 5) == SOCKET_ERROR) // 1 = SOMAXCONN (для многопользователей)
+		{
+			wprintf(L"Error! Listen failed: %d\n", WSAGetLastError());
+			return 1;
+		}
+		wprintf(L"Listening on socket...\n");
+
+		if((acceptSocket = accept(listenSocket, NULL, NULL)) == SOCKET_ERROR)//INVALID_SOCKET
+		{
+			wprintf(L"Error! Accept Failed. Decription: %d\n",WSAGetLastError());
+			closesocket(listenSocket);
+			WSACleanup();
+			return 1;
+		}
+		else
+			wprintf(L"Connected...\n");
+		while(1)
+		{
+			NetWork();
+		}
+		closesocket(listenSocket);
+		WSACleanup();
+		return 0;
+};
+
+//************************************************Client FOR LAB 2!!!
+class Client
+{
+public:
+	Client(void)
+	{
+		CheckDll();
+		wprintf(L"\nInput port: ");
+		int port;
+		cin>>port;
+		wprintf(L"\nInput address: ");
+		struct in_addr address;
+		string addrr;
+		cin>>addrr;//inet_ntoa(address)
+
+		const char * pop = addrr.c_str();
+		address.S_un.S_addr = inet_addr(pop);
+		CreateSocket(port, address);
+	};
+	struct sockaddr_in addr;
+	WSADATA wsaData;
+	SOCKET connectSocket;
+	//SOCKET acceptSocket;
+	int socketResult;
+	int CheckDll();
+	int CreateSocket(int port, struct in_addr address);
+
+	void FindServer();
+};
+
+int Client::CheckDll()
+{
+	    int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+        if (iResult != NO_ERROR) 
+		{
+			wprintf(L"WSAStartup failed with error: %ld\n", iResult);
+			Sleep(3000);
+			exit(1);
+		}
+		return 1;
+};
+int Client::CreateSocket(int port, struct in_addr address)
+{
+		CheckDll();
+		//struct in_addr address = getMyIP();
+		connectSocket = INVALID_SOCKET;
+		memset(&addr, 0, sizeof(addr));
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(port);
+		addr.sin_addr.s_addr = address.S_un.S_addr; //inet_addr("127.0.0.1"); htonl(INADDR_ANY); address.S_un.S_addr;
+
+		if((connectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET ) //SOCK_STREAM (for UDP - SOCK_DGRAM)
+		{
+			int errrr = WSAGetLastError();			
+			wprintf(L"Error! Socket Failed. Decription: %d\n", WSAGetLastError());
+			return 1;
+		}
+		if((socketResult=connect(connectSocket, (sockaddr *)& addr, sizeof (addr))) == SOCKET_ERROR)
+		{
+			wprintf(L"Error! Connection Failed. Decription: %d\n", WSAGetLastError());
+			if((socketResult = closesocket(connectSocket)) == SOCKET_ERROR)
+				wprintf(L"Error! Can not close socket. Decription: %d\n", WSAGetLastError());
+			return 1;
+		}
+		wprintf(L"Connected to server!\n");
+		for(;;) //NetWork
+		{
+			string _sendbuf;
+			printf(">>[%s]: ", inet_ntoa(address));
+			cin>>_sendbuf;
+			const char * sendbuf = _sendbuf.c_str();
+			
+			socketResult = send( connectSocket, sendbuf, (int)strlen(sendbuf), 0 );
+			if (socketResult == SOCKET_ERROR) 
+			{
+				wprintf(L"Send Failed With Error: %d\n", WSAGetLastError());
+				closesocket(connectSocket);
+				WSACleanup();
+				return 1;
+			}
+					int recvbuflen = DEFAULT_BUFLEN;		
+					char recvbuf[DEFAULT_BUFLEN] = "";
+			socketResult = recv(connectSocket, recvbuf, recvbuflen, 0);
+			if ( socketResult > 0 )
+			{
+				
+				printf("<<[%s]: %s\n",inet_ntoa(address), recvbuf);
+			}
+		}
+		socketResult = closesocket(connectSocket);
+		if (socketResult == SOCKET_ERROR)
+		{
+		   wprintf(L"closesocket function failed with error: %ld\n", WSAGetLastError());
+		   WSACleanup();
+		   return 1;
+	    }
+		return 0;
+};
+
+int main(void)
+{
+	int x;
+	
+	wprintf(L"1-Create Server\n2-Connect to server\n");
+	cin>>x;
+	int k = x;
+	if(k==1)
+		Server _server(5555);
+	else
+	{	
+		if(k==2) 
+			Client _client;
+		else
+			return 1;
+	}
+	cin>>k;
+}
