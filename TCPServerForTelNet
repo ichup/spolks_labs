@@ -88,8 +88,8 @@ struct in_addr Server::getMyIP()
 	gethostname(ac, sizeof(ac));
 	struct hostent *phe = gethostbyname(ac);
     struct in_addr addr;
-    //memcpy(&addr, phe->h_addr_list[0], sizeof(struct in_addr));
-     memcpy(&addr, argv[1], sizeof(struct in_addr));
+    memcpy(&addr, phe->h_addr_list[0], sizeof(struct in_addr));
+     //memcpy(&addr, argv[1], sizeof(struct in_addr));
     cout << "Address : " << inet_ntoa(addr) << endl;
 	return addr;
 };
@@ -100,7 +100,7 @@ int Server::CreateSocket(int port)
 		listenSocket = INVALID_SOCKET;
 		memset(&addr, 0, sizeof(addr));
 		addr.sin_family = AF_INET;
-		addr.sin_port = htons(argv[2]); //htons(port);
+		addr.sin_port = htons(port); //htons(port);
 		addr.sin_addr.s_addr = address.S_un.S_addr; //inet_addr("127.0.0.1"); htonl(INADDR_ANY); htonl(address.S_un.S_addr); //address.S_un.S_addr
 
 		if((listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET ) //SOCK_STREAM (for UDP - SOCK_DGRAM)
