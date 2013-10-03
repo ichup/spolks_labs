@@ -248,7 +248,14 @@ int main(int argc, char* argv[])
 	cin>>x;
 	int k = x;
 	if(k==1)
-		Server _server(5555);
+	{
+	int port;
+		
+	printf("port:\n");
+	scanf("%d", port);
+	Server _server(port);
+	}
+		
 	else
 	{	
 		if(k==2) 
