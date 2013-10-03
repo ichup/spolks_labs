@@ -249,10 +249,7 @@ int main(int argc, char* argv[])
 	int k = x;
 	if(k==1)
 	{
-	int port;
-		
-	printf("port:\n");
-	scanf("%d", port);
+	int port = atoi(argv[2]);
 	Server _server(port);
 	}
 		
