@@ -1,0 +1,76 @@
+<%@ Page Title="Home Page" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="UI._Default" %>
+
+<asp:Content runat="server" ID="FeaturedContent" ContentPlaceHolderID="FeaturedContent">
+    <section class="featured">
+        <div class="content-wrapper">
+            <p>
+                Input your word in the form below.
+            </p>
+        </div>
+    </section>
+</asp:Content>
+<asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+ <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js"></script>
+
+    <script type="text/javascript">
+      /*  $(document).ready(function () {
+            $(".Box").hover(function () {
+                $(this).stop().animate({ backgroundColor: "#FFCC00" }, 400);
+            }, function () {
+                $(this).stop().animate({ backgroundColor: "#ffffff" }, 400);
+            });
+        });*/
+ </script>
+<script type="text/javascript">
+    this.fadeLinks = function() {
+       var selector = "p"; // устанавливает какой элемент должен обработать скрипт
+       var speed = "normal" // скорость анимации ("slow", "normal", "fast")
+       var bgcolor = "#fff"; // приходится устанавливать цвет фона для IE
+       $(selector).each(function(){
+          $(this).css("position","relative");
+          var html = $(this).html();
+          $(this).html("<span class=\"one\">"+ html +"</span>");
+          $(this).append("<span class=\"two\">"+ html +"</span>");
+          if($.browser.msie){
+             $("span.one",$(this)).css({"background":bgcolor,"opacity":1});
+             $("span.two",$(this)).css("background",bgcolor);
+          };
+          $("span.two",$(this)).css({"opacity":0,"position":"absolute","top":0,"left":0});
+          $(this).hover(
+             function(){
+                $("span.one",this).stop().fadeTo(speed, 0);
+                $("span.two",this).stop().fadeTo(speed, 1);
+             },
+             function(){
+                $("span.one",this).stop().fadeTo(speed, 1);
+                $("span.two",this).stop().fadeTo(speed, 0);
+             }
+          )
+       });
+    };
+    $(function() {
+       fadeLinks();
+    })
+</script>
+    <div class="Box">la la la</div>
+   <textarea id="InputWord" rows="4" cols="50" class="Box">
+
+    </textarea>
+    <p>FUCK MVC</p>
+    <asp:Button id="InputWordAcpButtton"/>
+</asp:Content>
+
+
+
+
+
+
+p{
+    background-color: white;
+   color:black;
+}
+p span.two{
+   background-color: #FFCC00;
+   cursor:pointer;
+}
